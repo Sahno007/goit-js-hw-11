@@ -72,3 +72,36 @@ function scrollToNewImages() {
     behavior: "smooth",
   });
 }
+
+
+// const modal = document.getElementById('lightbox-modal');
+// const modalImage = modal.querySelector('.modal-image');
+// let instance = null;
+
+// gallery.addEventListener('click', (event) => {
+//   event.preventDefault();
+
+//   const clickedElement = event.target;
+
+//   if (clickedElement.tagName === 'IMG') {
+//     const imageUrl = clickedElement.dataset.source;
+
+//     modalImage.src = imageUrl;
+
+//     modal.style.display = 'block';
+
+//     instance = basicLightbox.create(modal.innerHTML, {
+//       onClose: () => {
+//         modal.style.display = 'none';
+//       }
+//     });
+
+//     instance.show();
+//   }
+// });
+
+// modal.addEventListener('click', (event) => {
+//   if (event.target.classList.contains('modal-close')) {
+//     instance.close();
+//   }
+// });
