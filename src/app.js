@@ -1,13 +1,14 @@
 import SimpleLightbox from "simplelightbox";
 import "simplelightbox/dist/simple-lightbox.min.css";
+import Notiflix from 'notiflix';
 
 const searchForm = document.getElementById("search-form");
 const gallery = document.querySelector(".gallery");
-const loadMoreButton = document.querySelector(".load-more");
 
 const API_KEY = "38932513-f34158b41be609c43e0a8ac7b";
 let currentPage = 1;
 let currentQuery = "";
+let loading = false;
 
 searchForm.addEventListener("submit", (event) => {
   event.preventDefault();
@@ -16,11 +17,11 @@ searchForm.addEventListener("submit", (event) => {
   fetchImages();
 });
 
-loadMoreButton.addEventListener("click", fetchImages);
-
 function fetchImages() {
-  if (currentQuery === "") return;
-
+  if (currentQuery === "" || loading) return;
+  
+  loading = true;
+  
   const url = `https://pixabay.com/api/?key=${API_KEY}&q=${currentQuery}&image_type=photo&orientation=horizontal&safesearch=true&page=${currentPage}&per_page=40`;
 
   fetch(url)
@@ -28,7 +29,12 @@ function fetchImages() {
     .then((data) => {
       if (currentPage === 1) {
         gallery.innerHTML = "";
-        const lightbox = new SimpleLightbox(".photo-card a");
+      }
+
+      if (data.hits.length === 0) {
+        Notiflix.Notify.failure("Sorry, there are no images matching your search query. Please try again.");
+        loading = false;
+        return;
       }
 
       data.hits.forEach((image) => {
@@ -37,15 +43,22 @@ function fetchImages() {
       });
 
       if (data.totalHits > currentPage * 40) {
-        loadMoreButton.style.display = "block";
+        currentPage += 1;
       } else {
-        loadMoreButton.style.display = "none";
+        Notiflix.Notify.info("No more images to load.");
       }
 
-      currentPage += 1;
-      scrollToNewImages();
+      Notiflix.Notify.success(`Hooray! We found ${data.totalHits} images.`);
+
+      const lightbox = new SimpleLightbox(".photo-card a");
+      lightbox.refresh();
+
+      loading = false;
     })
-    .catch((error) => console.error("Error fetching images:", error));
+    .catch((error) => {
+      console.error("Error fetching images:", error);
+      loading = false;
+    });
 }
 
 function createImageCard(image) {
@@ -53,7 +66,7 @@ function createImageCard(image) {
   card.className = "photo-card";
   card.innerHTML = `
     <a href="${image.largeImageURL}" data-lightbox="image">
-      <img src="${image.webformatURL}" alt="${image.tags}" loading="lazy">
+      <img src="${image.webformatURL}" alt="${image.tags}" loading="lazy" data-source="${image.largeImageURL}">
     </a>
     <div class="info">
       <p><b>Likes:</b> ${image.likes}</p>
@@ -65,43 +78,9 @@ function createImageCard(image) {
   return card;
 }
 
-function scrollToNewImages() {
-  const { height: cardHeight } = document.querySelector(".gallery").firstElementChild.getBoundingClientRect();
-  window.scrollBy({
-    top: cardHeight * 2,
-    behavior: "smooth",
-  });
-}
 
-
-// const modal = document.getElementById('lightbox-modal');
-// const modalImage = modal.querySelector('.modal-image');
-// let instance = null;
-
-// gallery.addEventListener('click', (event) => {
-//   event.preventDefault();
-
-//   const clickedElement = event.target;
-
-//   if (clickedElement.tagName === 'IMG') {
-//     const imageUrl = clickedElement.dataset.source;
-
-//     modalImage.src = imageUrl;
-
-//     modal.style.display = 'block';
-
-//     instance = basicLightbox.create(modal.innerHTML, {
-//       onClose: () => {
-//         modal.style.display = 'none';
-//       }
-//     });
-
-//     instance.show();
-//   }
-// });
-
-// modal.addEventListener('click', (event) => {
-//   if (event.target.classList.contains('modal-close')) {
-//     instance.close();
-//   }
-// });
+window.addEventListener("scroll", () => {
+  if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 100) {
+    fetchImages();
+  }
+});
