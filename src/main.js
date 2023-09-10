@@ -11,7 +11,7 @@ let displayedImageUrls = [];
 let loading = false;
 let notificationDisplayed = false;
 let lastPageLoaded = false;
-let totalImages = 0; // Оголошення totalImages перед використанням у функції
+let totalImages = 0;
 
 searchForm.addEventListener("submit", async (event) => {
   event.preventDefault();
