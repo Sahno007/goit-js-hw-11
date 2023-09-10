@@ -7,18 +7,24 @@ const searchForm = document.getElementById("search-form");
 const gallery = document.querySelector(".gallery");
 let currentPage = 1;
 let currentQuery = "";
-let loading = false;
 let displayedImageUrls = [];
+let loading = false;
+let notificationDisplayed = false;
+let lastPageLoaded = false;
 
 searchForm.addEventListener("submit", async (event) => {
   event.preventDefault();
-  currentQuery = event.target.searchQuery.value.trim(); 
+  currentQuery = event.target.searchQuery.value.trim();
   if (currentQuery === "") {
     Notiflix.Notify.failure("Please enter a valid search query.");
     return;
   }
 
   currentPage = 1;
+  displayedImageUrls = [];
+  gallery.innerHTML = "";
+  notificationDisplayed = false;
+  lastPageLoaded = false;
   await loadImages();
 });
 
@@ -28,13 +34,16 @@ async function loadImages() {
 
   const images = await fetchImages(currentPage, currentQuery);
 
-  if (currentPage === 1) {
-    gallery.innerHTML = "";
-    displayedImageUrls = [];
-  }
 
   if (images.length === 0) {
-    Notiflix.Notify.failure("Sorry, there are no images matching your search query. Please try again.");
+    if (currentPage === 1) {
+      Notiflix.Notify.failure("Sorry, there are no images matching your search query. Please try again.");
+    } else {
+      if (!lastPageLoaded) {
+        Notiflix.Notify.info("No more images to load.");
+        lastPageLoaded = true;
+      }
+    }
     loading = false;
     return;
   }
@@ -69,10 +78,14 @@ async function loadImages() {
   if (newImages.length === 40) {
     currentPage += 1;
   } else {
-    Notiflix.Notify.info("No more images to load.");
+    lastPageLoaded = true;
   }
 
-  Notiflix.Notify.success(`Hooray! We found ${newImages.length} images.`);
+
+  if (!notificationDisplayed) {
+    Notiflix.Notify.success(`Hooray! We found ${displayedImageUrls.length} images.`);
+    notificationDisplayed = true;
+  }
 
   const lightbox = new SimpleLightbox(".photo-card a");
   lightbox.refresh();
@@ -80,14 +93,15 @@ async function loadImages() {
   loading = false;
 }
 
-
 window.addEventListener("scroll", () => {
-  if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 100) {
-    loadImages(); 
+  if (!lastPageLoaded && window.innerHeight + window.scrollY >= document.body.offsetHeight - 100) {
+    loadImages();
   }
 });
 
-const lightbox = new SimpleLightbox(".photo-card a", {
-  captionsData: "alt",
-  captionDelay: 250,
+document.addEventListener('DOMContentLoaded', () => {
+  const lightbox = new SimpleLightbox(".photo-card a", {
+    captionsData: "alt",
+    captionDelay: 250,
+  });
 });
