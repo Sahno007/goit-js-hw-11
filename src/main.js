@@ -1,7 +1,7 @@
 import SimpleLightbox from "simplelightbox";
 import "simplelightbox/dist/simple-lightbox.min.css";
 import Notiflix from 'notiflix';
-import { fetchImages } from './api';
+import { fetchImages, fetchTotalImages } from './api';
 
 const searchForm = document.getElementById("search-form");
 const gallery = document.querySelector(".gallery");
@@ -11,6 +11,7 @@ let displayedImageUrls = [];
 let loading = false;
 let notificationDisplayed = false;
 let lastPageLoaded = false;
+let totalImages = 0; // Оголошення totalImages перед використанням у функції
 
 searchForm.addEventListener("submit", async (event) => {
   event.preventDefault();
@@ -25,6 +26,7 @@ searchForm.addEventListener("submit", async (event) => {
   gallery.innerHTML = "";
   notificationDisplayed = false;
   lastPageLoaded = false;
+  totalImages = 0;
   await loadImages();
 });
 
@@ -32,8 +34,10 @@ async function loadImages() {
   if (loading) return;
   loading = true;
 
-  
-  const totalImages = await fetchImages(currentQuery);
+  if (totalImages === 0) {
+    totalImages = await fetchTotalImages(currentQuery);
+  }
+
   const imagesPerPage = 40;
   const totalPages = Math.ceil(totalImages / imagesPerPage);
 
@@ -87,9 +91,8 @@ async function loadImages() {
     lastPageLoaded = true;
   }
 
-
   if (!notificationDisplayed) {
-    Notiflix.Notify.success(`Hooray! We found ${displayedImageUrls.length} images.`);
+    Notiflix.Notify.success(`Hooray! We found ${totalImages} images.`);
     notificationDisplayed = true;
   }
 
