@@ -32,17 +32,23 @@ async function loadImages() {
   if (loading) return;
   loading = true;
 
-  const images = await fetchImages(currentPage, currentQuery);
+  
+  const totalImages = await fetchImages(currentQuery);
+  const imagesPerPage = 40;
+  const totalPages = Math.ceil(totalImages / imagesPerPage);
 
+  if (currentPage > totalPages) {
+    loading = false;
+    return;
+  }
+
+  const images = await fetchImages(currentPage, currentQuery);
 
   if (images.length === 0) {
     if (currentPage === 1) {
       Notiflix.Notify.failure("Sorry, there are no images matching your search query. Please try again.");
     } else {
-      if (!lastPageLoaded) {
-        Notiflix.Notify.info("No more images to load.");
-        lastPageLoaded = true;
-      }
+      Notiflix.Notify.info("No more images to load.");
     }
     loading = false;
     return;
